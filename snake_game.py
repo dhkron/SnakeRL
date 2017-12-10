@@ -113,25 +113,24 @@ class Game:
 
     def draw(self):
         board = self.get_board()
+        symbols = {
+            0: ' ',
+            1: '+',
+            2: 'o',
+            255: '*',
+        }
 
-        print('+', end='')
-        print('-' * (self.w * 2 + 1), end='')
-        print('+')
+        print('╔', end='')
+        print('═' * (self.w * 2 + 1), end='')
+        print('╗')
         for row in board:
-            print('|', end=' ')
+            print('║', end=' ')
             for col in row:
-                if col == 1:
-                    print('+', end=' '),
-                elif col == 2:
-                    print('o', end=' '),
-                elif col == 255:
-                    print('*', end=' '),
-                else:
-                    print(' ', end=' '),
-            print('|')
-        print('+', end='')
-        print('-' * (self.w * 2 + 1), end='')
-        print('+')
+                print(symbols[int(col)], end=' '),
+            print('║')
+        print('╚', end='')
+        print('═' * (self.w * 2 + 1), end='')
+        print('╝')
 
         print('score = {score}'.format(
             score=self.score,
