@@ -5,7 +5,7 @@ import collections
 import numpy as np
 import tensorflow as tf
 
-from . import snake_game
+import snake_game
 
 EXP_BUFFER_SIZE = 100000
 EXP_BUFFER_BATCH_SIZE = 64
@@ -162,8 +162,6 @@ class Player:
         total_reward = 0
         j = 0
 
-        state_board_buffer = collections.deque(STATE_SIZE)
-
         for j in range(MAX_EPISODE_STEPS):
             current_state = game.get_board()
             current_action = self.get_action(
@@ -277,11 +275,3 @@ class Player:
             strides=[1, 2, 2, 1],
             padding='SAME',
         )
-
-
-p = Player(
-    w=4,
-    h=3,
-)
-p.train()
-p.play()

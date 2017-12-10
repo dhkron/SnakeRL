@@ -124,7 +124,7 @@ class Game:
                     print('+', end=' '),
                 elif col == 2:
                     print('o', end=' '),
-                elif col == 9:
+                elif col == 255:
                     print('*', end=' '),
                 else:
                     print(' ', end=' '),
