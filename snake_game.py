@@ -98,7 +98,7 @@ class Game:
             board[
                 self.candy.y,
                 self.candy.x,
-            ] = 255
+            ] = 9
         for scale in self.snake:
             board[
                 scale.y,
@@ -117,7 +117,7 @@ class Game:
             0: ' ',
             1: '+',
             2: 'o',
-            255: '*',
+            9: '*',
         }
 
         print('╔', end='')
@@ -142,4 +142,4 @@ class Game:
     
     def draw_with_sleep(self):
         self.draw_with_clear()
-        time.sleep(.2)
+        time.sleep(.1)
