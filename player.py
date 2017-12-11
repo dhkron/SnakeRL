@@ -6,6 +6,7 @@ import numpy as np
 import tensorflow as tf
 
 import game
+import expbuffer
 
 EXP_BUFFER_SIZE = 100000
 EXP_BUFFER_BATCH_SIZE = 64
@@ -14,49 +15,6 @@ MAX_EPISODE_STEPS = 1000
 DISCOUNT = 0.99
 LEARNING_RATE = 1e-4
 
-class ExpBuffer:
-    def __init__(self):
-        self.buffer_size = EXP_BUFFER_SIZE
-        self.count = 0
-        self.buffer = collections.deque()
-
-    def add(self, s, a, r, s2):
-        experience = (s, a, r, s2)
-        if self.count < self.buffer_size: 
-            self.buffer.append(experience)
-            self.count += 1
-        else:
-            self.buffer.popleft()
-            self.buffer.append(experience)
-
-    def size(self):
-        return self.count
-
-    def sample_batch(self, batch_size):
-        '''     
-        batch_size specifies the number of experiences to add 
-        to the batch. If the replay buffer has less than batch_size
-        elements, simply return all of the elements within the buffer.
-        Generally, you'll want to wait until the buffer has at least 
-        batch_size elements before beginning to sample from it.
-        '''
-        batch = []
-
-        if self.count < batch_size:
-            batch = random.sample(self.buffer, self.count)
-        else:
-            batch = random.sample(self.buffer, batch_size)
-
-        s_batch = np.array([_[0] for _ in batch])
-        a_batch = np.array([_[1] for _ in batch])
-        r_batch = np.array([_[2] for _ in batch])
-        s2_batch = np.array([_[3] for _ in batch])
-
-        return s_batch, a_batch, r_batch, s2_batch
-
-    def clear(self):
-        self.deque.clear()
-        self.count = 0
 
 class Player:
     def __init__(
@@ -66,7 +24,9 @@ class Player:
     ):
         self.w = w
         self.h = h
-        self.exp_buffer = ExpBuffer()
+        self.exp_buffer = expbuffer.ExpBuffer(
+            size=EXP_BUFFER_SIZE
+        )
 
         tf.reset_default_graph()
 
