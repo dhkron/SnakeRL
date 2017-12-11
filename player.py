@@ -5,7 +5,7 @@ import collections
 import numpy as np
 import tensorflow as tf
 
-import snake_game
+import game_api
 
 EXP_BUFFER_SIZE = 100000
 EXP_BUFFER_BATCH_SIZE = 64
@@ -200,7 +200,7 @@ class Player:
         init = tf.global_variables_initializer()
         self.sess = tf.Session()
         self.sess.run(init)
-        game = snake_game.Game(self.w, self.h)
+        game = game_api.Game(self.w, self.h)
         total_episodes_reward = 0
         
         for i in range(MAX_EPISODES):
@@ -222,7 +222,7 @@ class Player:
         self,
     ):
         while True:
-            g = snake_game.Game(self.w, self.h)
+            g = game_api.Game(self.w, self.h)
             g.start()
             input('Waiting for you...')
             while True:

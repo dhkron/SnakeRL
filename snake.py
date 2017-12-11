@@ -1,6 +1,6 @@
-import snake_player
+import player
 
-p = snake_player.Player(
+p = player.Player(
     w=4,
     h=4,
 )
