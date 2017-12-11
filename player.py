@@ -5,7 +5,7 @@ import collections
 import numpy as np
 import tensorflow as tf
 
-import game_api
+import game
 
 EXP_BUFFER_SIZE = 100000
 EXP_BUFFER_BATCH_SIZE = 64
@@ -155,22 +155,22 @@ class Player:
     
     def train_episode(
         self,
-        game,
+        g,
         episode_number,
     ):
-        game.start()
+        g.start()
         total_reward = 0
         j = 0
 
         for j in range(MAX_EPISODE_STEPS):
-            current_state = game.get_board()
+            current_state = g.get_board()
             current_action = self.get_action(
                 board_state=current_state,
                 e=1/(episode_number/100+10),
             )
 
-            terminal, reward = game.step(current_action)
-            next_state = game.get_board()
+            terminal, reward = g.step(current_action)
+            next_state = g.get_board()
             total_reward += reward
 
             self.exp_buffer.add(
@@ -200,12 +200,12 @@ class Player:
         init = tf.global_variables_initializer()
         self.sess = tf.Session()
         self.sess.run(init)
-        game = game_api.Game(self.w, self.h)
+        g = game.Game(self.w, self.h)
         total_episodes_reward = 0
         
         for i in range(MAX_EPISODES):
             total_episodes_reward += self.train_episode(
-                game=game,
+                g=g,
                 episode_number=i,
             )
           
@@ -222,7 +222,7 @@ class Player:
         self,
     ):
         while True:
-            g = game_api.Game(self.w, self.h)
+            g = game.Game(self.w, self.h)
             g.start()
             input('Waiting for you...')
             while True:
