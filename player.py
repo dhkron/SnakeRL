@@ -14,6 +14,7 @@ MAX_EPISODES = 100000
 MAX_EPISODE_STEPS = 1000
 DISCOUNT = 0.99
 LEARNING_RATE = 1e-4
+REPRESENTATION_CHANNELS = 3
 
 
 class Player:
@@ -30,20 +31,27 @@ class Player:
 
         tf.reset_default_graph()
 
-        self.x_board = tf.placeholder(tf.float32, shape=[None, h, w])
+        self.x= tf.placeholder(tf.float32, shape=[None, h * w * REPRESENTATION_CHANNELS])
 
-        x_board_reshaped = tf.reshape(self.x_board, [-1, h, w, 1])
+        x_reshaped = tf.reshape(self.x, [-1, h, w, REPRESENTATION_CHANNELS])
         h_conv1 = tf.contrib.layers.conv2d(
-            inputs=x_board_reshaped,
+            inputs=x_reshaped,
             num_outputs=32,
             kernel_size=[5, 5],
             stride=[1, 1],
             padding='SAME',
         )
-        h_conv1_flat = tf.reshape(h_conv1, [-1, w * h * 32])
+        h_conv2 = tf.contrib.layers.conv2d(
+            inputs=h_conv1,
+            num_outputs=32,
+            kernel_size=[3, 3],
+            stride=[1, 1],
+            padding='SAME',
+        )
+        h_conv2_flat = tf.reshape(h_conv2, [-1, w * h * 32])
 
         h_fc1 = tf.contrib.layers.fully_connected(
-            inputs=h_conv1_flat,
+            inputs=h_conv2_flat,
             num_outputs=w * h * 32,
         )
 
@@ -65,13 +73,13 @@ class Player:
 
     def get_action(
         self,
-        board_state,
+        state_rep,
         e=0.1,
     ):
         action = self.sess.run(
             self.action,
             feed_dict={
-                self.x_board: [board_state],
+                self.x: [state_rep],
             },
         )
         action = action[0]
@@ -79,6 +87,13 @@ class Player:
             action = random.choice([0, 1, 2])
 
         return action
+
+    def get_rep(
+        self,
+        board_states,
+    ):
+        rep = np.array(board_states).reshape(-1)
+        return rep
 
     def train_batch(
         self,
@@ -90,17 +105,16 @@ class Player:
         q = self.sess.run(
             self.Q,
             feed_dict={
-                self.x_board: states,
+                self.x: states,
             },
         )
         next_q = self.sess.run(
             self.Q,
             feed_dict={
-                self.x_board: next_states,
+                self.x: next_states,
             },
         )
        
-        # q is is [1,3], so in order to keep loss modify just q[action]
         for i, r in enumerate(rewards):
             max_next_q = np.max(next_q[i,:])
             q[i, actions[i]] = max_next_q * DISCOUNT + r
@@ -108,10 +122,26 @@ class Player:
         self.sess.run(
             [self.train_step],
             feed_dict={
-                self.x_board: states,
+                self.x: states,
                 self.reward_plus_discounted_next_max_Q: q, 
             },
         )
+
+    def get_new_board_history(
+        self,
+        g,
+    ):
+        board_history = collections.deque(
+            maxlen=REPRESENTATION_CHANNELS, 
+        )
+        init_board_state = g.get_board().reshape(-1)
+        for _ in range(REPRESENTATION_CHANNELS):
+            board_history.append(
+                init_board_state
+            )
+
+        return board_history
+
     
     def train_episode(
         self,
@@ -122,22 +152,36 @@ class Player:
         total_reward = 0
         j = 0
 
+        board_history = self.get_new_board_history(
+            g=g,
+        )
+
         for j in range(MAX_EPISODE_STEPS):
-            current_state = g.get_board()
+            current_rep=self.get_rep(
+                board_states=board_history,
+            )
             current_action = self.get_action(
-                board_state=current_state,
+                state_rep=current_rep,
                 e=1/(episode_number/100+10),
             )
 
             terminal, reward = g.step(current_action)
-            next_state = g.get_board()
+            next_state = g.get_board().reshape(-1)
             total_reward += reward
 
+            board_history.append(
+                next_state
+            )
+
+            next_rep=self.get_rep(
+                board_states=board_history,
+            )
+
             self.exp_buffer.add(
-                current_state,
+                current_rep,
                 current_action,
                 reward,
-                next_state,
+                next_rep,
             )
 
             if self.exp_buffer.size() > EXP_BUFFER_BATCH_SIZE:
@@ -184,13 +228,18 @@ class Player:
         while True:
             g = game.Game(self.w, self.h)
             g.start()
+            board_history = self.get_new_board_history(
+                g=g,
+            )
             input('Waiting for you...')
             while True:
                 try:
                     g.draw_with_sleep()
                     
                     action = self.get_action(
-                        board_state=g.get_board(),
+                        state_rep=self.get_rep(
+                            board_states=board_history,
+                        ),
                         e=0,
                     )
                     
@@ -199,6 +248,10 @@ class Player:
                         if reward:
                             g.draw_with_clear()
                         break
+
+                    board_history.append(
+                        g.get_board().reshape(-1)
+                    )
                 except KeyboardInterrupt:
                     break
 
