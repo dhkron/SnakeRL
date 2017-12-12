@@ -1,8 +1,8 @@
 import player
 
 p = player.Player(
-    w=4,
-    h=4,
+    w=5,
+    h=5,
 )
 p.train()
 p.play()

@@ -32,8 +32,14 @@ class History:
                 np.zeros(self.states[0].shape),
             )
 
+        shape = [
+            self.states[0].shape[0],
+            self.states[0].shape[1],
+            self.rep_size,
+        ]
+
         rep = np.ndarray(
-            shape=[4,4,self.rep_size]
+            shape=shape,
         )
         for i in range(self.rep_size):
             rep[:,:,i] = self.states[i]
