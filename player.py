@@ -15,7 +15,7 @@ MAX_EPISODES = 100000
 MAX_EPISODE_STEPS = 1000
 DISCOUNT = 0.99
 LEARNING_RATE = 1e-4
-REPRESENTATION_CHANNELS = 1
+REPRESENTATION_CHANNELS = 3
 
 
 class Player:
@@ -34,9 +34,8 @@ class Player:
 
         self.x= tf.placeholder(tf.float32, shape=[None, h,  w,  REPRESENTATION_CHANNELS])
 
-        #x_reshaped = tf.reshape(self.x, [-1, h, w, REPRESENTATION_CHANNELS])
         h_conv1 = tf.contrib.layers.conv2d(
-            inputs=x,
+            inputs=self.x,
             num_outputs=1,
             kernel_size=[1, 1],
             stride=[1, 1],
@@ -133,7 +132,7 @@ class Player:
         board_history = history.History(
             num_channels=REPRESENTATION_CHANNELS,
         )
-        board_history_add(initial_state)
+        board_history.add(initial_state)
 
         for j in range(MAX_EPISODE_STEPS):
             current_rep=board_history.get_rep()
@@ -204,7 +203,7 @@ class Player:
             board_history = history.History(
                 num_channels=REPRESENTATION_CHANNELS,
             )
-            board_history_add(initial_state)
+            board_history.add(initial_state)
             
             input('Waiting for you...')
             while True:
