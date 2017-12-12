@@ -48,8 +48,15 @@ class Player:
             stride=[1, 1],
             padding='SAME',
         )
-        h_conv_flat = tf.layers.flatten(
+        h_conv3 = tf.contrib.layers.conv2d(
             inputs=h_conv2,
+            num_outputs=32,
+            kernel_size=[4, 4],
+            stride=[1, 1],
+            padding='SAME',
+        )
+        h_conv_flat = tf.layers.flatten(
+            inputs=h_conv3,
         )
         h_fc1 = tf.contrib.layers.fully_connected(
             inputs=h_conv_flat,
@@ -216,7 +223,7 @@ class Player:
                     )
 
                     next_state, terminal, reward = g.step(action)
-                    board_history.append(next_state)
+                    board_history.add(next_state)
 
                     if terminal:
                         if reward:
