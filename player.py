@@ -8,13 +8,13 @@ import tensorflow as tf
 import game
 import expbuffer
 
-EXP_BUFFER_SIZE = 100000
+EXP_BUFFER_SIZE = 1000000
 EXP_BUFFER_BATCH_SIZE = 64
 MAX_EPISODES = 100000
 MAX_EPISODE_STEPS = 1000
 DISCOUNT = 0.99
 LEARNING_RATE = 1e-4
-REPRESENTATION_CHANNELS = 3
+REPRESENTATION_CHANNELS = 1
 
 
 class Player:
@@ -26,7 +26,7 @@ class Player:
         self.w = w
         self.h = h
         self.exp_buffer = expbuffer.ExpBuffer(
-            size=EXP_BUFFER_SIZE
+            size=EXP_BUFFER_SIZE,
         )
 
         tf.reset_default_graph()
@@ -37,30 +37,29 @@ class Player:
         h_conv1 = tf.contrib.layers.conv2d(
             inputs=x_reshaped,
             num_outputs=32,
-            kernel_size=[5, 5],
+            kernel_size=[4, 4],
             stride=[1, 1],
             padding='SAME',
         )
         h_conv2 = tf.contrib.layers.conv2d(
             inputs=h_conv1,
             num_outputs=32,
-            kernel_size=[3, 3],
+            kernel_size=[4, 4],
             stride=[1, 1],
             padding='SAME',
         )
-        h_conv2_flat = tf.reshape(h_conv2, [-1, w * h * 32])
-
-        h_fc1 = tf.contrib.layers.fully_connected(
-            inputs=h_conv2_flat,
-            num_outputs=w * h * 32,
+        h_conv_flat = tf.layers.flatten(
+            inputs=h_conv2,
         )
-
+        h_fc1 = tf.contrib.layers.fully_connected(
+            inputs=h_conv_flat,
+            num_outputs=1024,
+        )
         self.Q = tf.contrib.layers.fully_connected(
             inputs=h_fc1,
             num_outputs=3,
             activation_fn=None,
         )
-        
         self.action = tf.argmax(self.Q, 1)
 
         self.reward_plus_discounted_next_max_Q = tf.placeholder(tf.float32, shape=[None, 3])
@@ -134,14 +133,18 @@ class Player:
         board_history = collections.deque(
             maxlen=REPRESENTATION_CHANNELS, 
         )
-        init_board_state = g.get_board().reshape(-1)
-        for _ in range(REPRESENTATION_CHANNELS):
+        for _ in range(REPRESENTATION_CHANNELS-1):
             board_history.append(
-                init_board_state
+                np.zeros(
+                    self.h * self .w,
+                )
             )
+        
+        board_history.append(
+            g.get_board().reshape(-1)
+        )
 
         return board_history
-
     
     def train_episode(
         self,
@@ -162,7 +165,7 @@ class Player:
             )
             current_action = self.get_action(
                 state_rep=current_rep,
-                e=1/(episode_number/100+10),
+                e=1/(episode_number/100+5),
             )
 
             terminal, reward = g.step(current_action)
@@ -254,37 +257,3 @@ class Player:
                     )
                 except KeyboardInterrupt:
                     break
-
-    @classmethod
-    def weight_variable(cls, shape):
-        initial = tf.truncated_normal(
-            stddev=0.1,
-            shape=shape,
-        )
-        return tf.Variable(initial)
-
-    @classmethod
-    def bias_variable(cls, shape):
-        initial = tf.constant(
-            value=0.1,
-            shape=shape,
-        )
-        return tf.Variable(initial)
-
-    @classmethod
-    def conv2d(cls, x, W):
-        return tf.nn.conv2d(
-            input=x,
-            filter=W,
-            strides=[1, 1, 1, 1],
-            padding='SAME',
-        )
-
-    @classmethod
-    def max_pool_2x2(cls, x):
-        return tf.nn.max_pool(
-            x,
-            ksize=[1, 2, 2, 1],
-            strides=[1, 2, 2, 1],
-            padding='SAME',
-        )

@@ -142,4 +142,4 @@ class Game:
     
     def draw_with_sleep(self):
         self.draw_with_clear()
-        time.sleep(.1)
+        time.sleep(.2)
