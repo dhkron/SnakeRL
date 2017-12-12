@@ -13,7 +13,7 @@ class Game:
         self.w = w
         self.h = h
 
-    def start(self):
+    def reset(self):
         self.score = 0
         self.snake = [
             P(0, int(self.h/2)),
@@ -21,6 +21,8 @@ class Game:
             P(2, int(self.h/2)),
         ]
         self.candy = self.get_new_candy()
+
+        return self.get_board()
 
     def get_snake_orientation(self):
         return P(
@@ -71,24 +73,48 @@ class Game:
         new_head = self.get_new_head(direction)
 
         if new_head.x < 0 or new_head.x >= self.w:
-            return True, 0
+            return (
+                self.get_board(),
+                True,
+                0,
+            )
         if new_head.y < 0 or new_head.y >= self.h:
-            return True, 0
+            return (
+                self.get_board(),
+                True,
+                0,
+            )
         for scale in self.snake[1:-2]:
             if new_head.x == scale.x and new_head.y == scale.y:
-                return True, 0
+                return (
+                    self.get_board(),
+                    True,
+                    0,
+                )
 
         self.snake.append(new_head)
         if new_head.x == self.candy.x and new_head.y == self.candy.y:
             self.candy = self.get_new_candy()
             self.score += 1
             if self.candy is None:
-                return True, 1
+                return (
+                    self.get_board(),
+                    True,
+                    1,
+                )
             else:
-                return False, 1
+                return (
+                    self.get_board(),
+                    False,
+                    1,
+                )
         else:
             self.snake.pop(0)
-            return False, 0
+            return (
+                self.get_board(),
+                False,
+                0,
+            )
 
         raise Exception('Why am I here?')
 
