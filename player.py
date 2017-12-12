@@ -15,7 +15,7 @@ MAX_EPISODES = 100000
 MAX_EPISODE_STEPS = 1000
 DISCOUNT = 0.99
 LEARNING_RATE = 1e-4
-REPRESENTATION_CHANNELS = 3
+HISTORY_SIZE = 1
 
 
 class Player:
@@ -32,24 +32,21 @@ class Player:
 
         tf.reset_default_graph()
 
-        self.x= tf.placeholder(tf.float32, shape=[None, h,  w,  REPRESENTATION_CHANNELS])
+        self.x= tf.placeholder(tf.float32, shape=[None, h,  w])
+        x_reshaped= tf.reshape(
+            self.x,
+            shape=[-1, h, w, 1],
+        )
 
         h_conv1 = tf.contrib.layers.conv2d(
-            inputs=self.x,
-            num_outputs=1,
-            kernel_size=[1, 1],
-            stride=[1, 1],
-            padding='SAME',
-        )
-        h_conv2 = tf.contrib.layers.conv2d(
-            inputs=h_conv1,
+            inputs=x_reshaped,
             num_outputs=32,
             kernel_size=[4, 4],
             stride=[1, 1],
             padding='SAME',
         )
         h_conv_flat = tf.layers.flatten(
-            inputs=h_conv2,
+            inputs=h_conv1,
         )
         h_fc1 = tf.contrib.layers.fully_connected(
             inputs=h_conv_flat,
@@ -69,6 +66,10 @@ class Player:
             ),
         )
         self.train_step = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss)
+
+        init = tf.global_variables_initializer()
+        self.sess = tf.Session()
+        self.sess.run(init)
 
     def get_action(
         self,
@@ -129,23 +130,25 @@ class Player:
         
         initial_state = g.reset()
         
-        board_history = history.History(
-            num_channels=REPRESENTATION_CHANNELS,
-        )
-        board_history.add(initial_state)
+        #board_history = history.History(
+        #    size=HISTORY_SIZE,
+        #)
+        #board_history.add(initial_state)
+        state = initial_state
 
         for j in range(MAX_EPISODE_STEPS):
-            current_rep=board_history.get_rep()
+            current_rep = state#board_history.get_rep()
             current_action = self.get_action(
                 state_rep=current_rep,
-                e=.05+.95/(1+episode_number/1000),
+                e=.05+.95/(1+episode_number/100),
             )
 
             next_state, terminal, reward = g.step(current_action)
             total_reward += reward
 
-            board_history.add(next_state)
-            next_rep = board_history.get_rep()
+            #board_history.add(next_state)
+            next_rep = next_state#board_history.get_rep()
+            state = next_state
 
             self.exp_buffer.add(
                 current_rep,
@@ -171,9 +174,6 @@ class Player:
     def train(
         self,
     ):
-        init = tf.global_variables_initializer()
-        self.sess = tf.Session()
-        self.sess.run(init)
         g = game.Game(self.w, self.h)
         total_episodes_reward = 0
         
@@ -200,23 +200,26 @@ class Player:
 
             initial_state = g.reset()
             
-            board_history = history.History(
-                num_channels=REPRESENTATION_CHANNELS,
-            )
-            board_history.add(initial_state)
+            #board_history = history.History(
+            #    size=HISTORY_SIZE,
+            #)
+            #board_history.add(initial_state)
+            state = initial_state
             
             input('Waiting for you...')
             while True:
                 try:
                     g.draw_with_sleep()
                     
+                    current_rep = state#board_history.get_rep()
                     action = self.get_action(
-                        state_rep=board_history.get_rep(),
+                        state_rep=current_rep,
                         e=0,
                     )
 
                     next_state, terminal, reward = g.step(action)
-                    board_history.append(next_state)
+                    #board_history.append(next_state)
+                    state = next_state
 
                     if terminal:
                         if reward:
