@@ -7,6 +7,7 @@ import tensorflow as tf
 
 import game
 import expbuffer
+import history
 
 EXP_BUFFER_SIZE = 1000000
 EXP_BUFFER_BATCH_SIZE = 64
@@ -31,13 +32,13 @@ class Player:
 
         tf.reset_default_graph()
 
-        self.x= tf.placeholder(tf.float32, shape=[None, h * w * REPRESENTATION_CHANNELS])
+        self.x= tf.placeholder(tf.float32, shape=[None, h,  w,  REPRESENTATION_CHANNELS])
 
-        x_reshaped = tf.reshape(self.x, [-1, h, w, REPRESENTATION_CHANNELS])
+        #x_reshaped = tf.reshape(self.x, [-1, h, w, REPRESENTATION_CHANNELS])
         h_conv1 = tf.contrib.layers.conv2d(
-            inputs=x_reshaped,
-            num_outputs=32,
-            kernel_size=[4, 4],
+            inputs=x,
+            num_outputs=1,
+            kernel_size=[1, 1],
             stride=[1, 1],
             padding='SAME',
         )
@@ -87,13 +88,6 @@ class Player:
 
         return action
 
-    def get_rep(
-        self,
-        board_states,
-    ):
-        rep = np.array(board_states).reshape(-1)
-        return rep
-
     def train_batch(
         self,
         states,
@@ -126,59 +120,33 @@ class Player:
             },
         )
 
-    def get_new_board_history(
-        self,
-        g,
-    ):
-        board_history = collections.deque(
-            maxlen=REPRESENTATION_CHANNELS, 
-        )
-        for _ in range(REPRESENTATION_CHANNELS-1):
-            board_history.append(
-                np.zeros(
-                    self.h * self .w,
-                )
-            )
-        
-        board_history.append(
-            g.get_board().reshape(-1)
-        )
-
-        return board_history
-    
     def train_episode(
         self,
         g,
         episode_number,
     ):
-        g.start()
         total_reward = 0
         j = 0
-
-        board_history = self.get_new_board_history(
-            g=g,
+        
+        initial_state = g.reset()
+        
+        board_history = history.History(
+            num_channels=REPRESENTATION_CHANNELS,
         )
+        board_history_add(initial_state)
 
         for j in range(MAX_EPISODE_STEPS):
-            current_rep=self.get_rep(
-                board_states=board_history,
-            )
+            current_rep=board_history.get_rep()
             current_action = self.get_action(
                 state_rep=current_rep,
-                e=1/(episode_number/100+5),
+                e=.05+.95/(1+episode_number/1000),
             )
 
-            terminal, reward = g.step(current_action)
-            next_state = g.get_board().reshape(-1)
+            next_state, terminal, reward = g.step(current_action)
             total_reward += reward
 
-            board_history.append(
-                next_state
-            )
-
-            next_rep=self.get_rep(
-                board_states=board_history,
-            )
+            board_history.add(next_state)
+            next_rep = board_history.get_rep()
 
             self.exp_buffer.add(
                 current_rep,
@@ -230,30 +198,31 @@ class Player:
     ):
         while True:
             g = game.Game(self.w, self.h)
-            g.start()
-            board_history = self.get_new_board_history(
-                g=g,
+
+            initial_state = g.reset()
+            
+            board_history = history.History(
+                num_channels=REPRESENTATION_CHANNELS,
             )
+            board_history_add(initial_state)
+            
             input('Waiting for you...')
             while True:
                 try:
                     g.draw_with_sleep()
                     
                     action = self.get_action(
-                        state_rep=self.get_rep(
-                            board_states=board_history,
-                        ),
+                        state_rep=board_history.get_rep(),
                         e=0,
                     )
-                    
-                    terminal, reward = g.step(action)
+
+                    next_state, terminal, reward = g.step(action)
+                    board_history.append(next_state)
+
                     if terminal:
                         if reward:
                             g.draw_with_clear()
                         break
 
-                    board_history.append(
-                        g.get_board().reshape(-1)
-                    )
                 except KeyboardInterrupt:
                     break
