@@ -5,12 +5,12 @@ import numpy as np
 class History:
     def __init__(
         self,
-        num_channels,
+        size,
     ):
         self.states = collections.deque(
-            maxlen=num_channels,
+            maxlen=size,
         )
-        self.rep_size = num_channels
+        self.rep_size = size
 
     def add(
         self,
@@ -32,16 +32,12 @@ class History:
                 np.zeros(self.states[0].shape),
             )
 
-        shape = [
-            self.states[0].shape[0],
-            self.states[0].shape[1],
-            self.rep_size,
-        ]
-
-        rep = np.ndarray(
-            shape=shape,
+        rep = np.zeros(
+            shape=self.states[0].shape,
         )
-        for i in range(self.rep_size):
-            rep[:,:,i] = self.states[i]
+        weight = 1
+        for mat in self.states: 
+            rep[:,:,] += mat * weight
+            weight *= 2
 
         return rep
