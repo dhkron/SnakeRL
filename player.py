@@ -15,7 +15,7 @@ MAX_EPISODES = 100000
 MAX_EPISODE_STEPS = 1000
 DISCOUNT = 0.99
 LEARNING_RATE = 1e-4
-HISTORY_SIZE = 1
+#HISTORY_SIZE = 1
 
 
 class Player:
@@ -183,7 +183,7 @@ class Player:
                 episode_number=i,
             )
           
-            if i%100 == 0:
+            if i%100 == 0 and i > 0:
                 print(
                     'Total reward for episode {episode_number}: {reward}'.format(
                         episode_number=i,
