@@ -230,6 +230,7 @@ class Player:
             #)
             #board_history.add(initial_state)
             state = initial_state
+            prev_a = 2
             
             input('Waiting for you...')
             while True:
@@ -239,12 +240,14 @@ class Player:
                     current_rep = state#board_history.get_rep()
                     action = self.get_action(
                         state_rep=current_rep,
+                        prev_a=prev_a,
                         e=0,
                     )
 
                     next_state, terminal, reward = g.step(action)
-                    #board_history.append(next_state)
                     state = next_state
+                    prev_a = action
+                    #board_history.append(next_state)
 
                     if terminal:
                         if reward:
