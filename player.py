@@ -12,7 +12,7 @@ import history
 EXP_BUFFER_SIZE = 100000
 EXP_BUFFER_BATCH_SIZE = 64
 MAX_EPISODES = 100000
-MAX_EPISODE_STEPS = 1000
+MAX_EPISODE_STEPS = 100
 DISCOUNT = 0.99
 LEARNING_RATE = 1e-4
 #HISTORY_SIZE = 1
@@ -32,37 +32,35 @@ class Player:
 
         tf.reset_default_graph()
 
-        self.prev_a = tf.placeholder(tf.float32, shape=[None, ])
-        prev_a = tf.reshape(self.prev_a, shape=[-1, 1])
-
         self.x = tf.placeholder(tf.float32, shape=[None, h,  w])
+        self.prev_a = tf.placeholder(tf.float32, shape=[None, ])
+
         x_reshaped = tf.reshape(
             self.x,
-            shape=[-1, h, w, 1],
+            shape=[-1, h * w],
         )
 
-        h_conv1 = tf.contrib.layers.conv2d(
-            inputs=x_reshaped,
-            num_outputs=32,
-            kernel_size=[4, 4],
-            stride=[1, 1],
-            padding='SAME',
-        )
-        h_conv_flat = tf.layers.flatten(
-            inputs=h_conv1,
-        )
+        prev_a = tf.reshape(self.prev_a, shape=[-1, 1])
 
         h_joined = tf.concat(
-            [h_conv_flat, prev_a],
+            [x_reshaped, prev_a],
             1,
         )
 
-        h_fc1 = tf.contrib.layers.fully_connected(
+        h1 = tf.contrib.layers.fully_connected(
             inputs=h_joined,
-            num_outputs=1024,
+            num_outputs=128,
+        )
+        h2 = tf.contrib.layers.fully_connected(
+            inputs=h1,
+            num_outputs=128,
+        )
+        h3 = tf.contrib.layers.fully_connected(
+            inputs=h2,
+            num_outputs=128,
         )
         self.Q = tf.contrib.layers.fully_connected(
-            inputs=h_fc1,
+            inputs=h3,
             num_outputs=3,
             activation_fn=None,
         )
