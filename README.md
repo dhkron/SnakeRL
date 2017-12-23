@@ -2,6 +2,9 @@
 
 Run: `python3 snake.py`
 
+Takes few hours to train on my GPU-less Macbook Pro 13.3.
+Press CTRL+C to exit training step and watch it play.
+
 ## TL;DR
 These bunch of scripts were used by me to play around with reinforcement learning, given the task of defeating snake.
 I tried many methods, focusing on 4x4 board size. Got moderate results, probabliy because of falling into local maxima or because snake states can not easily be generalized by a DQN.
